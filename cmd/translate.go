@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"android-translation-tool/cmd/internal"
-	"android-translation-tool/cmd/ui/singleselect"
+	"android-translate-tool/cmd/internal"
+	"android-translate-tool/cmd/ui/singleselect"
 
 	tea "github.com/charmbracelet/bubbletea"
 

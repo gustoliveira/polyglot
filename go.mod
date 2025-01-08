@@ -1,4 +1,4 @@
-module android-translation-tool
+module android-translate-tool
 
 go 1.23.0
 
