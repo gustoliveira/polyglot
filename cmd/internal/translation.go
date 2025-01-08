@@ -29,8 +29,6 @@ func TranslateText(text string, targetLanguage string, googleApiKey *string) (st
 		key = *googleApiKey
 	}
 
-	fmt.Println("key:", key)
-
 	ctx := context.Background()
 
 	client, err := translate.NewClient(ctx, option.WithAPIKey(key))

@@ -62,6 +62,23 @@ func (r Resources) ContainsStringByKey(key string) bool {
 	return false
 }
 
+func (r Resources) CreateOrSubstituteStringByKey(key string, value string) Resources {
+	for index, s := range r.Strings {
+		if s.Key == key {
+			r.Strings[index].Value = value
+			return r
+		}
+	}
+
+	r = r.AppendNewString(String{
+		XMLName: xml.Name{Local: "string"},
+		Key:     key,
+		Value:   value,
+	})
+
+	return r
+}
+
 // Marshal the updated Resources struct back to XML
 func (r Resources) UpdateResourcesToXMLFile(path string) error {
 	output, err := xml.MarshalIndent(r, "", "    ")

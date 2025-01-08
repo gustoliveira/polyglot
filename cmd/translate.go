@@ -14,11 +14,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var force bool
+
 func init() {
 	rootCmd.AddCommand(translateCmd)
 	translateCmd.Flags().StringP("key", "k", "", "Key to use for translation (no spaces allowed, lowercases letters and underscores only)")
 	translateCmd.Flags().StringP("value", "v", "", "String to translate (english only, closed in quotes)")
 	translateCmd.Flags().StringP("googleApiKey", "g", "", "Google Translate API Key (if not set it will use the GOOGLE_TRANSLATE_KEY environment variable)")
+	translateCmd.Flags().BoolVar(&force, "force", false, "Force translation even if the key already exists in the file by substituting the value for the new translated one")
 }
 
 var translateCmd = &cobra.Command{
@@ -64,28 +67,38 @@ var translateCmd = &cobra.Command{
 			languagesFound = append(languagesFound, s.Language)
 		}
 
-		fmt.Println("Languages found:", languagesFound)
+		fmt.Printf("Languages found: %v\n", languagesFound)
 
-		fmt.Println("Translating...")
+		fmt.Println("Translating...\n")
 
 		for _, s := range strings {
-			t, err := internal.TranslateText(str, s.LocaleCode, &googleApiKey)
-			if err != nil {
-				fmt.Println("Error translating to", s.Language)
-				continue
-			}
-
 			r, err := internal.GetResourcesFromPathXML(s.Path)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
 
-			r = r.AppendNewString(internal.String{
-				XMLName: xml.Name{Local: "string"},
-				Key:     key,
-				Value:   t,
-			})
+			if r.ContainsStringByKey(key) && !force {
+				fmt.Printf("Key <%v> already exists in %v\n", key, s.Path)
+				continue
+			}
+
+			t, err := internal.TranslateText(str, s.LocaleCode, &googleApiKey)
+			if err != nil {
+				fmt.Println("Error translating to", s.Language)
+				continue
+			}
+
+			if r.ContainsStringByKey(key) && force {
+				fmt.Printf("Substituting <%v> that already exists in %v\n", key, s.Path)
+				r = r.CreateOrSubstituteStringByKey(key, t)
+			} else {
+				r = r.AppendNewString(internal.String{
+					XMLName: xml.Name{Local: "string"},
+					Key:     key,
+					Value:   t,
+				})
+			}
 
 			err = r.UpdateResourcesToXMLFile(s.Path)
 			if err != nil {
@@ -93,7 +106,7 @@ var translateCmd = &cobra.Command{
 				continue
 			}
 
-			fmt.Printf("%v: %v", s.Language, t)
+			fmt.Printf("%v: %v\n", s.Language, t)
 		}
 	},
 }
