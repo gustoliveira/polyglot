@@ -15,14 +15,13 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(createCmd)
-	createCmd.Flags().StringP("key", "k", "", "Key to use for translation (no spaces allowed, lowercases letters and underscores only)")
-	createCmd.Flags().StringP("value", "v", "", "String to translate (english only, closed in quotes)")
-	createCmd.Flags().StringP("googleApiKey", "g", "", "Google Translate API Key (if not set it will use the GOOGLE_TRANSLATE_KEY environment variable)")
-	createCmd.Flags().BoolP("apply", "a", false, "Apply the translation to the project (default is false) (if false it will only print the translations)")
+	rootCmd.AddCommand(translateCmd)
+	translateCmd.Flags().StringP("key", "k", "", "Key to use for translation (no spaces allowed, lowercases letters and underscores only)")
+	translateCmd.Flags().StringP("value", "v", "", "String to translate (english only, closed in quotes)")
+	translateCmd.Flags().StringP("googleApiKey", "g", "", "Google Translate API Key (if not set it will use the GOOGLE_TRANSLATE_KEY environment variable)")
 }
 
-var createCmd = &cobra.Command{
+var translateCmd = &cobra.Command{
 	Use:   "translate",
 	Short: "Translate a string",
 	Run: func(cmd *cobra.Command, args []string) {

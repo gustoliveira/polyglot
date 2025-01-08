@@ -43,6 +43,25 @@ func (r Resources) AppendNewString(newString String) Resources {
 	return r
 }
 
+func (r Resources) RemoveStringByKey(key string) Resources {
+	for index, s := range r.Strings {
+		if s.Key == key {
+			r.Strings = append(r.Strings[:index], r.Strings[index+1:]...)
+		}
+	}
+	return r
+}
+
+func (r Resources) ContainsStringByKey(key string) bool {
+	for _, s := range r.Strings {
+		if s.Key == key {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Marshal the updated Resources struct back to XML
 func (r Resources) UpdateResourcesToXMLFile(path string) error {
 	output, err := xml.MarshalIndent(r, "", "    ")
