@@ -19,10 +19,21 @@ type Translation struct {
 	RegionCode string
 }
 
-func TranslateText(text string, targetLanguage string) (string, error) {
+func ContainsGoogleApiKey() bool {
+	return GOOGLE_API_KEY != ""
+}
+
+func TranslateText(text string, targetLanguage string, googleApiKey *string) (string, error) {
+	key := GOOGLE_API_KEY
+	if googleApiKey != nil && *googleApiKey != "" {
+		key = *googleApiKey
+	}
+
+	fmt.Println("key:", key)
+
 	ctx := context.Background()
 
-	client, err := translate.NewClient(ctx, option.WithAPIKey(GOOGLE_API_KEY))
+	client, err := translate.NewClient(ctx, option.WithAPIKey(key))
 	if err != nil {
 		return "", fmt.Errorf("failed to create client: %v", err)
 	}

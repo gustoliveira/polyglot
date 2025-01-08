@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"log"
+	"os"
 
 	"android-translate-tool/cmd/internal"
 	"android-translate-tool/cmd/ui/singleselect"
@@ -17,6 +18,7 @@ func init() {
 	rootCmd.AddCommand(createCmd)
 	createCmd.Flags().StringP("key", "k", "", "Key to use for translation (no spaces allowed, lowercases letters and underscores only)")
 	createCmd.Flags().StringP("value", "v", "", "String to translate (english only, closed in quotes)")
+	createCmd.Flags().StringP("googleApiKey", "g", "", "Google Translate API Key (if not set it will use the GOOGLE_TRANSLATE_KEY environment variable)")
 	createCmd.Flags().BoolP("apply", "a", false, "Apply the translation to the project (default is false) (if false it will only print the translations)")
 }
 
@@ -26,19 +28,20 @@ var createCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		key := cmd.Flag("key").Value.String()
 		str := cmd.Flag("value").Value.String()
+		googleApiKey := cmd.Flag("googleApiKey").Value.String()
 
-		fmt.Println("Key:", key)
-		fmt.Println("String:", str)
-		fmt.Println("")
+		if googleApiKey == "" && !internal.ContainsGoogleApiKey() {
+			fmt.Println("You need to pass the key through --googleApiKey flag or set the GOOGLE_TRANSLATE_KEY environment variable to use this command.")
+			return
+		}
 
-		currentDir := "/home/gustavo/dpms/mobile-norway"
-		// currentDir, err := os.Getwd()
-		// if err != nil {
-		// 	fmt.Println("Error getting current directory:", err)
-		// 	return
-		// }
+		currentDir, err := os.Getwd()
+		if err != nil {
+			fmt.Println("Error getting current directory:", err)
+			return
+		}
+
 		resDirs := internal.FindResourcesDirectoriesPath(currentDir)
-
 		if len(resDirs) == 0 {
 			fmt.Println("No Android resource directories found.")
 			return
@@ -67,7 +70,7 @@ var createCmd = &cobra.Command{
 		fmt.Println("Translating...")
 
 		for _, s := range strings {
-			t, err := internal.TranslateText(str, s.LocaleCode)
+			t, err := internal.TranslateText(str, s.LocaleCode, &googleApiKey)
 			if err != nil {
 				fmt.Println("Error translating to", s.Language)
 				continue
