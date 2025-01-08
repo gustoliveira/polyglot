@@ -24,12 +24,6 @@ var createCmd = &cobra.Command{
 	Use:   "translate",
 	Short: "Translate a string",
 	Run: func(cmd *cobra.Command, args []string) {
-		inAndroidProject := internal.CheckCurrentDirectoryIsAndroidProject()
-		if !inAndroidProject {
-			fmt.Println("This is not an Android project or you are not in the root directory of an Android project.")
-			return
-		}
-
 		key := cmd.Flag("key").Value.String()
 		str := cmd.Flag("value").Value.String()
 
@@ -37,11 +31,12 @@ var createCmd = &cobra.Command{
 		fmt.Println("String:", str)
 		fmt.Println("")
 
-		currentDir, err := os.Getwd()
-		if err != nil {
-			fmt.Println("Error getting current directory:", err)
-			return
-		}
+		currentDir := "/home/gustavo/dpms/mobile-norway"
+		// currentDir, err := os.Getwd()
+		// if err != nil {
+		// 	fmt.Println("Error getting current directory:", err)
+		// 	return
+		// }
 		resDirs := internal.FindResourcesDirectoriesPath(currentDir)
 
 		if len(resDirs) == 0 {
@@ -96,7 +91,7 @@ var createCmd = &cobra.Command{
 				continue
 			}
 
-			fmt.Println(s.Language, ":", t)
+			fmt.Printf("%v: %v", s.Language, t)
 		}
 	},
 }
