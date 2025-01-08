@@ -1,7 +1,3 @@
-/*
-Copyright © 2025 Gustavo de Oliveira Ferreira <gust.oliveira.ferreira@gmail.com>
-*/
-
 package main
 
 import (

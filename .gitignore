@@ -1,5 +1,6 @@
 .env
 att
+examples/
 
 ### Go ###
 # Binaries for programs and plugins

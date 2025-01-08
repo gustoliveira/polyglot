@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"encoding/xml"
 	"fmt"
 	"log"
-	"os"
 
 	"android-translate-tool/cmd/internal"
 	"android-translate-tool/cmd/ui/singleselect"
@@ -51,8 +51,7 @@ var createCmd = &cobra.Command{
 
 		selectedPath := singleselect.Selection{Selected: ""}
 
-		var tprogram *tea.Program
-		tprogram = tea.NewProgram(singleselect.InitialModelSingleSelect(resDirs, &selectedPath))
+		tprogram := tea.NewProgram(singleselect.InitialModelSingleSelect(resDirs, &selectedPath))
 		if _, err := tprogram.Run(); err != nil {
 			log.Printf("Name of project contains an error: %v", err)
 		}
@@ -70,14 +69,31 @@ var createCmd = &cobra.Command{
 
 		fmt.Println("Languages found:", languagesFound)
 
-		fmt.Println("Translating...\n")
+		fmt.Println("Translating...")
 
 		for _, s := range strings {
 			t, err := internal.TranslateText(str, s.LocaleCode)
 			if err != nil {
-				fmt.Println("Error translating text:", err)
-				fmt.Println("Language:", s)
-				return
+				fmt.Println("Error translating to", s.Language)
+				continue
+			}
+
+			r, err := internal.GetResourcesFromPathXML(s.Path)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			r = r.AppendNewString(internal.String{
+				XMLName: xml.Name{Local: "string"},
+				Key:     key,
+				Value:   t,
+			})
+
+			err = r.UpdateResourcesToXMLFile(s.Path)
+			if err != nil {
+				fmt.Println(err)
+				continue
 			}
 
 			fmt.Println(s.Language, ":", t)
