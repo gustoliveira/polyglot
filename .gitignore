@@ -2,6 +2,9 @@
 att
 examples/
 
+# Added by goreleaser init:
+dist/
+
 ### Go ###
 # Binaries for programs and plugins
 *.exe

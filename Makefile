@@ -20,4 +20,9 @@ clean:
 	@rm -f main
 	@rm -rf coverage.out
 
-.PHONY: build run test clean
+release:
+	@echo "Building release with goreleaser locally..."
+	@goreleaser check
+	@goreleaser release --snapshot --clean
+
+.PHONY: build run test covera clean release
