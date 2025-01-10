@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"android-translate-tool/cmd"
+	"polyglot/cmd"
 
 	_ "github.com/joho/godotenv/autoload"
 )

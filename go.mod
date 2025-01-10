@@ -1,4 +1,4 @@
-module android-translate-tool
+module polyglot
 
 go 1.23.0
 
