@@ -42,7 +42,12 @@ func TranslateText(text string, targetLanguage string, googleApiKey *string) (st
 		return "", fmt.Errorf("failed to parse target language: %v", err)
 	}
 
-	resp, err := client.Translate(ctx, []string{text}, lang, nil)
+	resp, err := client.Translate(
+		ctx,
+		[]string{text},
+		lang,
+		&translate.Options{Format: translate.Text},
+	)
 	if err != nil {
 		return "", fmt.Errorf("failed to translate text: %v", err)
 	}

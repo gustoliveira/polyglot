@@ -31,7 +31,7 @@ var translateCmd = &cobra.Command{
 }
 
 func runTranslateCmd(cmd *cobra.Command, args []string) {
-	internal.BlockIfNotAndroidProject()
+	internal.BlockIfNotAndroidProject(func() { os.Exit(1) })
 
 	key := cmd.Flag("key").Value.String()
 	str := cmd.Flag("value").Value.String()

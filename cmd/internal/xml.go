@@ -2,7 +2,7 @@ package internal
 
 import (
 	"encoding/xml"
-	"log"
+	"fmt"
 	"os"
 )
 
@@ -25,13 +25,13 @@ func GetResourcesFromPathXML(path string) (Resources, error) {
 	// Open and read the existing XML file
 	fileBytes, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatalf("Error reading file: %v", err)
+		fmt.Printf("Error reading file: %v\n", err)
 		return resources, err
 	}
 
 	// Unmarshal the file contents into the Resources struct.
 	if err := xml.Unmarshal(fileBytes, &resources); err != nil {
-		log.Fatalf("Error unmarshaling XML: %v", err)
+		fmt.Printf("Error unmarshaling XML: %v\n", err)
 		return resources, err
 	}
 
@@ -83,14 +83,14 @@ func (r Resources) CreateOrSubstituteStringByKey(key string, value string) Resou
 func (r Resources) UpdateResourcesToXMLFile(path string) error {
 	output, err := xml.MarshalIndent(r, "", "    ")
 	if err != nil {
-		log.Fatalf("Error marshaling XML: %v", err)
+		fmt.Printf("Error marshaling XML: %v\n", err)
 		return err
 	}
 
 	// Overwrite the same file (or create a new one).
 	err = os.WriteFile(path, output, 0o644)
 	if err != nil {
-		log.Fatalf("Error writing file: %v", err)
+		fmt.Printf("Error writing file: %v\n", err)
 		return err
 	}
 

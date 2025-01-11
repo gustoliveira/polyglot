@@ -29,10 +29,10 @@ func CheckCurrentDirectoryIsAndroidProject() bool {
 	return isAndroidProject
 }
 
-func BlockIfNotAndroidProject() {
+func BlockIfNotAndroidProject(onBlockCallback func()) {
 	if !CheckCurrentDirectoryIsAndroidProject() {
 		fmt.Println("Current directory is not an Android project.")
-		os.Exit(1)
+		onBlockCallback()
 	}
 }
 
@@ -79,7 +79,11 @@ func GetTranslationsFromResourceDirectory(path string) []Translation {
 			return nil
 		}
 
-		t := GetTranslationFromFileName(path)
+		t, err := GetTranslationFromFileName(path)
+		if err != nil {
+			return err
+		}
+
 		translations = append(translations, t)
 
 		return nil
@@ -91,7 +95,7 @@ func GetTranslationsFromResourceDirectory(path string) []Translation {
 	return translations
 }
 
-func GetTranslationFromFileName(path string) Translation {
+func GetTranslationFromFileName(path string) (Translation, error) {
 	size := len(path)
 
 	locale, region := extract(path[:size-12])
@@ -99,18 +103,24 @@ func GetTranslationFromFileName(path string) Translation {
 		locale = "en"
 	}
 
-	tag := locale
+	languageTag := locale
 
 	if region != "" {
-		tag += "-" + region
+		languageTag += "-" + region
+	}
+
+	tag, err := language.Parse(languageTag)
+	if err != nil {
+		fmt.Println("Error parsing language tag:", err)
+		return Translation{}, err
 	}
 
 	return Translation{
 		Path:       path,
 		LocaleCode: locale,
 		RegionCode: region,
-		Language:   display.English.Languages().Name(language.MustParse(tag)),
-	}
+		Language:   display.English.Languages().Name(tag),
+	}, nil
 }
 
 func extract(dirName string) (string, string) {
