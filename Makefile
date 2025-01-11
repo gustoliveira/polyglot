@@ -1,7 +1,10 @@
 build:
 	@echo "Building and installing..."
-	@go build -o att main.go
+	@go build -o polyglot main.go
 	@go install
+	@echo "Installing bash completion..."
+	@polyglot completion bash > /tmp/polyglot-completion
+	@bash -c 'source /tmp/polyglot-completion'
 
 run:
 	@go run main.go

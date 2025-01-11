@@ -29,6 +29,13 @@ func CheckCurrentDirectoryIsAndroidProject() bool {
 	return isAndroidProject
 }
 
+func BlockIfNotAndroidProject() {
+	if !CheckCurrentDirectoryIsAndroidProject() {
+		fmt.Println("Current directory is not an Android project.")
+		os.Exit(1)
+	}
+}
+
 func FindResourcesDirectoriesPath(root string) []string {
 	var resDirs []string
 

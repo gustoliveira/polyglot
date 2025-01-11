@@ -27,86 +27,88 @@ func init() {
 var translateCmd = &cobra.Command{
 	Use:   "translate",
 	Short: "Translate a string",
-	Run: func(cmd *cobra.Command, args []string) {
-		key := cmd.Flag("key").Value.String()
-		str := cmd.Flag("value").Value.String()
-		googleApiKey := cmd.Flag("googleApiKey").Value.String()
+	Run:   runTranslateCmd,
+}
 
-		if googleApiKey == "" && !internal.ContainsGoogleApiKey() {
-			fmt.Println("You need to pass the key through --googleApiKey flag or set the GOOGLE_TRANSLATE_KEY environment variable to use this command.")
-			return
-		}
+func runTranslateCmd(cmd *cobra.Command, args []string) {
+	internal.BlockIfNotAndroidProject()
 
-		currentDir, err := os.Getwd()
+	key := cmd.Flag("key").Value.String()
+	str := cmd.Flag("value").Value.String()
+	googleApiKey := cmd.Flag("googleApiKey").Value.String()
+
+	if googleApiKey == "" && !internal.ContainsGoogleApiKey() {
+		fmt.Println("You need to pass the key through --googleApiKey flag or set the GOOGLE_TRANSLATE_KEY environment variable to use this command.")
+		return
+	}
+
+	currentDir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error getting current directory:", err)
+		return
+	}
+
+	resDirs := internal.FindResourcesDirectoriesPath(currentDir)
+	if len(resDirs) == 0 {
+		fmt.Println("No Android resource directories found.")
+		return
+	}
+
+	selectedPath := singleselect.Selection{Selected: ""}
+
+	tprogram := tea.NewProgram(singleselect.InitialModelSingleSelect(resDirs, &selectedPath))
+	if _, err := tprogram.Run(); err != nil {
+		log.Printf("Name of project contains an error: %v", err)
+	}
+
+	if selectedPath.Selected == "" {
+		return
+	}
+
+	strings := internal.GetTranslationsFromResourceDirectory(selectedPath.Selected)
+
+	languagesFound := []string{}
+	for _, s := range strings {
+		languagesFound = append(languagesFound, s.Language)
+	}
+
+	fmt.Printf("Languages found: %v\nTranslating...\n\n", languagesFound)
+
+	for _, s := range strings {
+		r, err := internal.GetResourcesFromPathXML(s.Path)
 		if err != nil {
-			fmt.Println("Error getting current directory:", err)
-			return
+			fmt.Println(err)
+			continue
 		}
 
-		resDirs := internal.FindResourcesDirectoriesPath(currentDir)
-		if len(resDirs) == 0 {
-			fmt.Println("No Android resource directories found.")
-			return
+		if r.ContainsStringByKey(key) && !force {
+			fmt.Printf("Key <%v> already exists in %v\n", key, s.Path)
+			continue
 		}
 
-		selectedPath := singleselect.Selection{Selected: ""}
-
-		tprogram := tea.NewProgram(singleselect.InitialModelSingleSelect(resDirs, &selectedPath))
-		if _, err := tprogram.Run(); err != nil {
-			log.Printf("Name of project contains an error: %v", err)
+		t, err := internal.TranslateText(str, s.LocaleCode, &googleApiKey)
+		if err != nil {
+			fmt.Println("Error translating to", s.Language)
+			continue
 		}
 
-		if selectedPath.Selected == "" {
-			return
+		if r.ContainsStringByKey(key) && force {
+			fmt.Printf("Substituting <%v> that already exists in %v\n", key, s.Path)
+			r = r.CreateOrSubstituteStringByKey(key, t)
+		} else {
+			r = r.AppendNewString(internal.String{
+				XMLName: xml.Name{Local: "string"},
+				Key:     key,
+				Value:   t,
+			})
 		}
 
-		strings := internal.GetTranslationsFromResourceDirectory(selectedPath.Selected)
-
-		languagesFound := []string{}
-		for _, s := range strings {
-			languagesFound = append(languagesFound, s.Language)
+		err = r.UpdateResourcesToXMLFile(s.Path)
+		if err != nil {
+			fmt.Println(err)
+			continue
 		}
 
-		fmt.Printf("Languages found: %v\n", languagesFound)
-
-		fmt.Println("Translating...\n")
-
-		for _, s := range strings {
-			r, err := internal.GetResourcesFromPathXML(s.Path)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-
-			if r.ContainsStringByKey(key) && !force {
-				fmt.Printf("Key <%v> already exists in %v\n", key, s.Path)
-				continue
-			}
-
-			t, err := internal.TranslateText(str, s.LocaleCode, &googleApiKey)
-			if err != nil {
-				fmt.Println("Error translating to", s.Language)
-				continue
-			}
-
-			if r.ContainsStringByKey(key) && force {
-				fmt.Printf("Substituting <%v> that already exists in %v\n", key, s.Path)
-				r = r.CreateOrSubstituteStringByKey(key, t)
-			} else {
-				r = r.AppendNewString(internal.String{
-					XMLName: xml.Name{Local: "string"},
-					Key:     key,
-					Value:   t,
-				})
-			}
-
-			err = r.UpdateResourcesToXMLFile(s.Path)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-
-			fmt.Printf("%v: %v\n", s.Language, t)
-		}
-	},
+		fmt.Printf("%v: %v\n", s.Language, t)
+	}
 }
