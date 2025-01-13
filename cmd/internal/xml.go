@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"sort"
 )
 
 type Resources struct {
@@ -109,4 +110,14 @@ func (r Resources) IsSortedByKey() bool {
 	}
 
 	return true
+}
+
+func (r Resources) SortByKey() {
+	if r.IsSortedByKey() {
+		return
+	}
+
+	sort.SliceStable(r.Strings, func(i, j int) bool {
+		return r.Strings[i].Key < r.Strings[j].Key
+	})
 }

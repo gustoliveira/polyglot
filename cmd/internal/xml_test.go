@@ -548,3 +548,111 @@ func TestIsSortedByKey(t *testing.T) {
 		})
 	}
 }
+
+func TestSortByKey(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    Resources
+		expected Resources
+	}{
+		{
+			name:     "Empty list",
+			input:    Resources{Strings: []String{}},
+			expected: Resources{Strings: []String{}},
+		},
+		{
+			name: "Single element",
+			input: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+				},
+			},
+			expected: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+				},
+			},
+		},
+		{
+			name: "Already sorted list",
+			input: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+					{Key: "b", Value: "value2"},
+					{Key: "c", Value: "value3"},
+				},
+			},
+			expected: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+					{Key: "b", Value: "value2"},
+					{Key: "c", Value: "value3"},
+				},
+			},
+		},
+		{
+			name: "Unsorted list",
+			input: Resources{
+				Strings: []String{
+					{Key: "c", Value: "value3"},
+					{Key: "a", Value: "value1"},
+					{Key: "b", Value: "value2"},
+				},
+			},
+			expected: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+					{Key: "b", Value: "value2"},
+					{Key: "c", Value: "value3"},
+				},
+			},
+		},
+		{
+			name: "List with duplicate keys",
+			input: Resources{
+				Strings: []String{
+					{Key: "b", Value: "value2"},
+					{Key: "a", Value: "value1"},
+					{Key: "c", Value: "value3"},
+					{Key: "a", Value: "value4"},
+				},
+			},
+			expected: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+					{Key: "a", Value: "value4"},
+					{Key: "b", Value: "value2"},
+					{Key: "c", Value: "value3"},
+				},
+			},
+		},
+		{
+			name: "List with duplicate keys should keep the order and dont consider Value",
+			input: Resources{
+				Strings: []String{
+					{Key: "b", Value: "value2"},
+					{Key: "a", Value: "value4"},
+					{Key: "c", Value: "value3"},
+					{Key: "a", Value: "value1"},
+				},
+			},
+			expected: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value4"},
+					{Key: "a", Value: "value1"},
+					{Key: "b", Value: "value2"},
+					{Key: "c", Value: "value3"},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.input.SortByKey()
+			if !reflect.DeepEqual(tc.input, tc.expected) {
+				t.Errorf("Expected sorted Resources to be %v, but got %v", tc.expected, tc.input)
+			}
+		})
+	}
+}
