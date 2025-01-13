@@ -1,8 +1,10 @@
 package internal
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"polyglot/cmd/ui/singleselect"
 
@@ -37,4 +39,57 @@ func SingleSelectResDirectoryAndReturnTranslations() ([]Translation, error) {
 	translations := GetTranslationsFromResourceDirectory(selectedPath.Selected)
 
 	return translations, nil
+}
+
+func IsKeyBeingUsed(key string) (bool, error) {
+	_, err := exec.LookPath("rg")
+	if err == nil {
+		return IsKeyBeingUsedRipGrep(key)
+	}
+
+	return IsKeyBeingUsedGrep(key)
+}
+
+func IsKeyBeingUsedRipGrep(key string) (bool, error) {
+	k := fmt.Sprintf("R.string.%v", key)
+
+	cmd := exec.Command("rg", k, "--glob=*.kt")
+
+	var output bytes.Buffer
+	cmd.Stderr = &output
+
+	err := cmd.Run()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if exitErr.ExitCode() == 1 {
+				return false, nil
+			}
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}
+
+func IsKeyBeingUsedGrep(key string) (bool, error) {
+	k := fmt.Sprintf("R.string.%v", key)
+
+	cmd := exec.Command("grep", "-r", k, "--include=*.kt", ".")
+
+	var output bytes.Buffer
+	cmd.Stderr = &output
+
+	err := cmd.Run()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if exitErr.ExitCode() == 1 {
+				return false, nil
+			}
+		}
+
+		return false, err
+	}
+
+	return true, nil
 }
