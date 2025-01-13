@@ -96,3 +96,17 @@ func (r Resources) UpdateResourcesToXMLFile(path string) error {
 
 	return nil
 }
+
+func (r Resources) IsSortedByKey() bool {
+	for i := range r.Strings {
+		if i == 0 {
+			continue
+		}
+
+		if r.Strings[i-1].Key > r.Strings[i].Key {
+			return false
+		}
+	}
+
+	return true
+}

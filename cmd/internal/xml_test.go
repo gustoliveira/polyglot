@@ -459,3 +459,92 @@ func TestUpdateResourcesToXMLFile(t *testing.T) {
 		}
 	})
 }
+
+func TestIsSortedByKey(t *testing.T) {
+	testCases := []struct {
+		name      string
+		resources Resources
+		expected  bool
+	}{
+		{
+			name: "Empty list",
+			resources: Resources{
+				Strings: []String{},
+			},
+			expected: true,
+		},
+		{
+			name: "Single element",
+			resources: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Sorted list",
+			resources: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+					{Key: "b", Value: "value2"},
+					{Key: "c", Value: "value3"},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Unsorted list",
+			resources: Resources{
+				Strings: []String{
+					{Key: "b", Value: "value2"},
+					{Key: "a", Value: "value1"},
+					{Key: "c", Value: "value3"},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Duplicate keys in sorted order",
+			resources: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+					{Key: "a", Value: "value2"},
+					{Key: "b", Value: "value3"},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Duplicate keys but unsorted values must consider sorted",
+			resources: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value2"},
+					{Key: "a", Value: "value1"},
+					{Key: "b", Value: "value3"},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Duplicate keys in unsorted order",
+			resources: Resources{
+				Strings: []String{
+					{Key: "a", Value: "value1"},
+					{Key: "b", Value: "value2"},
+					{Key: "a", Value: "value3"},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := tc.resources.IsSortedByKey()
+			if result != tc.expected {
+				t.Errorf("Expected IsSortedByKey() to return %v, but got %v", tc.expected, result)
+			}
+		})
+	}
+}
