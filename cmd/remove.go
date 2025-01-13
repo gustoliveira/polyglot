@@ -2,13 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"polyglot/cmd/internal"
-	"polyglot/cmd/ui/singleselect"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -32,60 +29,34 @@ func runRemoveCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	currentDir, err := os.Getwd()
-	if err != nil {
-		fmt.Println("Error getting current directory:", err)
+	translations, err := internal.SingleSelectResDirectoryAndReturnTranslations()
+	if err != nil || translations == nil {
+		fmt.Println("Error getting translations...")
 		return
 	}
-
-	resDirs := internal.FindResourcesDirectoriesPath(currentDir)
-	if len(resDirs) == 0 {
-		fmt.Println("No Android resource directories found.")
-		return
-	}
-
-	selectedPath := singleselect.Selection{Selected: ""}
-
-	tprogram := tea.NewProgram(singleselect.InitialModelSingleSelect(resDirs, &selectedPath))
-	if _, err := tprogram.Run(); err != nil {
-		log.Printf("Name of project contains an error: %v\n", err)
-	}
-
-	if selectedPath.Selected == "" {
-		return
-	}
-
-	strings := internal.GetTranslationsFromResourceDirectory(selectedPath.Selected)
-
-	languagesFound := []string{}
-	for _, s := range strings {
-		languagesFound = append(languagesFound, s.Language)
-	}
-
-	fmt.Println("Languages found:", languagesFound)
 
 	fmt.Println("Removing...")
 
-	for _, s := range strings {
-		r, err := internal.GetResourcesFromPathXML(s.Path)
+	for _, t := range translations {
+		r, err := internal.GetResourcesFromPathXML(t.Path)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 
 		if !r.ContainsStringByKey(key) {
-			fmt.Printf("Key <%v> not found in %v\n", key, s.Path)
+			fmt.Printf("Key <%v> not found in %v\n", key, t.Path)
 			continue
 		}
 
 		r = r.RemoveStringByKey(key)
 
-		err = r.UpdateResourcesToXMLFile(s.Path)
+		err = r.UpdateResourcesToXMLFile(t.Path)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 
-		fmt.Printf("Removed <%v> from %v\n", key, s.Path)
+		fmt.Printf("Removed <%v> from %v\n", key, t.Path)
 	}
 }

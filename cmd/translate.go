@@ -3,13 +3,9 @@ package cmd
 import (
 	"encoding/xml"
 	"fmt"
-	"log"
 	"os"
 
 	"polyglot/cmd/internal"
-	"polyglot/cmd/ui/singleselect"
-
-	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/spf13/cobra"
 )
@@ -42,73 +38,54 @@ func runTranslateCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	currentDir, err := os.Getwd()
-	if err != nil {
-		fmt.Println("Error getting current directory:", err)
+	translations, err := internal.SingleSelectResDirectoryAndReturnTranslations()
+	if err != nil || translations == nil {
+		fmt.Println("Error getting translations...")
 		return
 	}
-
-	resDirs := internal.FindResourcesDirectoriesPath(currentDir)
-	if len(resDirs) == 0 {
-		fmt.Println("No Android resource directories found.")
-		return
-	}
-
-	selectedPath := singleselect.Selection{Selected: ""}
-
-	tprogram := tea.NewProgram(singleselect.InitialModelSingleSelect(resDirs, &selectedPath))
-	if _, err := tprogram.Run(); err != nil {
-		log.Printf("Name of project contains an error: %v", err)
-	}
-
-	if selectedPath.Selected == "" {
-		return
-	}
-
-	strings := internal.GetTranslationsFromResourceDirectory(selectedPath.Selected)
 
 	languagesFound := []string{}
-	for _, s := range strings {
+	for _, s := range translations {
 		languagesFound = append(languagesFound, s.Language)
 	}
 
 	fmt.Printf("Languages found: %v\nTranslating...\n\n", languagesFound)
 
-	for _, s := range strings {
-		r, err := internal.GetResourcesFromPathXML(s.Path)
+	for _, t := range translations {
+		r, err := internal.GetResourcesFromPathXML(t.Path)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 
 		if r.ContainsStringByKey(key) && !force {
-			fmt.Printf("Key <%v> already exists in %v\n", key, s.Path)
+			fmt.Printf("Key <%v> already exists in %v\n", key, t.Path)
 			continue
 		}
 
-		t, err := internal.TranslateText(str, s.LocaleCode, &googleApiKey)
+		translatedText, err := internal.TranslateText(str, t.LocaleCode, &googleApiKey)
 		if err != nil {
-			fmt.Println("Error translating to", s.Language)
+			fmt.Println("Error translating to", t.Language)
 			continue
 		}
 
 		if r.ContainsStringByKey(key) && force {
-			fmt.Printf("Substituting <%v> that already exists in %v\n", key, s.Path)
-			r = r.CreateOrSubstituteStringByKey(key, t)
+			fmt.Printf("Substituting <%v> that already exists in %v\n", key, t.Path)
+			r = r.CreateOrSubstituteStringByKey(key, translatedText)
 		} else {
 			r = r.AppendNewString(internal.String{
 				XMLName: xml.Name{Local: "string"},
 				Key:     key,
-				Value:   t,
+				Value:   translatedText,
 			})
 		}
 
-		err = r.UpdateResourcesToXMLFile(s.Path)
+		err = r.UpdateResourcesToXMLFile(t.Path)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 
-		fmt.Printf("%v: %v\n", s.Language, t)
+		fmt.Printf("%v: %v\n", t.Language, translatedText)
 	}
 }
