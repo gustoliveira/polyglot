@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 
 	"polyglot/cmd/ui/singleselect"
 
@@ -92,4 +93,22 @@ func IsKeyBeingUsedGrep(key string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func IsStringKeyValid(k string) bool {
+	isValid := regexp.MustCompile(`^[a-z](?:[a-z_]*[a-z])*$`).MatchString
+	return len(k) != 0 && isValid(k)
+}
+
+func IsKeyValidPrintMessage(key string) bool {
+	if key == "" {
+		fmt.Println("You need to pass the key through --key flag to use this command.")
+		return false
+	}
+	if !IsStringKeyValid(key) {
+		fmt.Println("Invalid key. Only lowercases letters and underscores are allowed.")
+		return false
+	}
+
+	return true
 }

@@ -30,6 +30,10 @@ func runTranslateCmd(cmd *cobra.Command, args []string) {
 	internal.BlockIfNotAndroidProject(func() { os.Exit(1) })
 
 	key := cmd.Flag("key").Value.String()
+	if !internal.IsKeyValidPrintMessage(key) {
+		return
+	}
+
 	str := cmd.Flag("value").Value.String()
 	googleApiKey := cmd.Flag("googleApiKey").Value.String()
 

@@ -24,8 +24,7 @@ func runRemoveCmd(cmd *cobra.Command, args []string) {
 	internal.BlockIfNotAndroidProject(func() { os.Exit(1) })
 
 	key := cmd.Flag("key").Value.String()
-	if key == "" {
-		fmt.Println("You need to pass the key through --key flag to use this command.")
+	if !internal.IsKeyValidPrintMessage(key) {
 		return
 	}
 
