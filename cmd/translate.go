@@ -69,16 +69,7 @@ func runTranslateCmd(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		if r.ContainsStringByKey(key) && force {
-			fmt.Printf("Substituting <%v> that already exists in %v\n", key, t.Path)
-			r = r.CreateOrSubstituteStringByKey(key, translatedText)
-		} else {
-			r = r.AppendNewString(internal.String{
-				XMLName: xml.Name{Local: "string"},
-				Key:     key,
-				Value:   translatedText,
-			})
-		}
+		r = addStringToResources(r, t, key, translatedText)
 
 		err = r.UpdateResourcesToXMLFile(t.Path)
 		if err != nil {
@@ -88,4 +79,25 @@ func runTranslateCmd(cmd *cobra.Command, args []string) {
 
 		fmt.Printf("%v: %v\n", t.Language, translatedText)
 	}
+}
+
+func addStringToResources(r internal.Resources, t internal.Translation, key, translatedText string) internal.Resources {
+	if r.ContainsStringByKey(key) && force {
+		fmt.Printf("Substituting <%v> that already exists in %v\n", key, t.Path)
+		return r.CreateOrSubstituteStringByKey(key, translatedText)
+	}
+
+	if r.IsSortedByKey() {
+		return r.AddNewStringSorted(internal.String{
+			XMLName: xml.Name{Local: "string"},
+			Key:     key,
+			Value:   translatedText,
+		})
+	}
+
+	return r.AppendNewString(internal.String{
+		XMLName: xml.Name{Local: "string"},
+		Key:     key,
+		Value:   translatedText,
+	})
 }

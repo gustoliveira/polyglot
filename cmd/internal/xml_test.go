@@ -9,6 +9,190 @@ import (
 	"testing"
 )
 
+func TestAddNewStringSorted(t *testing.T) {
+	testCases := []struct {
+		name             string
+		initialResource  Resources
+		newString        String
+		expectedResource Resources
+	}{
+		{
+			name:            "Add to empty Resources",
+			initialResource: Resources{},
+			newString:       String{Key: "test_key", Value: "Test Value"},
+			expectedResource: Resources{
+				Strings: []String{{Key: "test_key", Value: "Test Value"}},
+			},
+		},
+		{
+			name: "Insert into a sorted Resources",
+			initialResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "b", Value: "B"},
+					{Key: "d", Value: "D"},
+				},
+			},
+			newString: String{Key: "c", Value: "C"},
+			expectedResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "b", Value: "B"},
+					{Key: "c", Value: "C"},
+					{Key: "d", Value: "D"},
+				},
+			},
+		},
+		{
+			name: "Insert into an unsorted Resources",
+			initialResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "d", Value: "D"},
+					{Key: "b", Value: "B"},
+				},
+			},
+			newString: String{Key: "c", Value: "C"},
+			expectedResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "c", Value: "C"},
+					{Key: "d", Value: "D"},
+					{Key: "b", Value: "B"},
+				},
+			},
+		},
+		{
+			name: "Insert into a sorted Resources with duplicated keys",
+			initialResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "b", Value: "B"},
+					{Key: "c", Value: "C"},
+					{Key: "d", Value: "D"},
+				},
+			},
+			newString: String{Key: "c", Value: "C"},
+			expectedResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "b", Value: "B"},
+					{Key: "c", Value: "C"},
+					{Key: "c", Value: "C"},
+					{Key: "d", Value: "D"},
+				},
+			},
+		},
+		{
+			name: "Insert into an unsorted Resources with duplicated keys",
+			initialResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "b", Value: "B"},
+					{Key: "d", Value: "D"},
+					{Key: "c", Value: "C"},
+				},
+			},
+			newString: String{Key: "c", Value: "C"},
+			expectedResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "b", Value: "B"},
+					{Key: "c", Value: "C"},
+					{Key: "d", Value: "D"},
+					{Key: "c", Value: "C"},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := tc.initialResource.AddNewStringSorted(tc.newString)
+
+			if !reflect.DeepEqual(result, tc.expectedResource) {
+				t.Errorf("AddNewStringSorted() = %v, want %v", result, tc.expectedResource)
+			}
+		})
+	}
+}
+
+func TestIndexToAddSorted(t *testing.T) {
+	testCases := []struct {
+		name            string
+		initialResource Resources
+		newString       String
+		expectedIndex   int
+	}{
+		{
+			name:            "Add to empty Resources",
+			initialResource: Resources{},
+			newString:       String{Key: "test_key", Value: "Test Value"},
+			expectedIndex:   0,
+		},
+		{
+			name: "Insert into a sorted Resources",
+			initialResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "b", Value: "B"},
+					{Key: "d", Value: "D"},
+				},
+			},
+			newString:     String{Key: "c", Value: "C"},
+			expectedIndex: 2,
+		},
+		{
+			name: "Insert into an unsorted Resources",
+			initialResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "d", Value: "D"},
+					{Key: "b", Value: "B"},
+				},
+			},
+			newString:     String{Key: "c", Value: "C"},
+			expectedIndex: 1,
+		},
+		{
+			name: "Insert into an unsorted with duplicated key",
+			initialResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "b", Value: "B"},
+					{Key: "d", Value: "D"},
+					{Key: "c", Value: "C"},
+				},
+			},
+			newString:     String{Key: "c", Value: "C"},
+			expectedIndex: 2,
+		},
+		{
+			name: "Insert into a sorted with duplicated key",
+			initialResource: Resources{
+				Strings: []String{
+					{Key: "a", Value: "A"},
+					{Key: "b", Value: "B"},
+					{Key: "c", Value: "C"},
+					{Key: "d", Value: "D"},
+				},
+			},
+			newString:     String{Key: "c", Value: "C"},
+			expectedIndex: 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := tc.initialResource.IndexToAddSorted(tc.newString)
+
+			if !reflect.DeepEqual(result, tc.expectedIndex) {
+				t.Errorf("IndexToAddSorted() = %v, want %v", result, tc.expectedIndex)
+			}
+		})
+	}
+}
+
 func TestAppendNewString(t *testing.T) {
 	testCases := []struct {
 		name             string
@@ -209,13 +393,13 @@ func TestCreateOrSubstituteStringByKey(t *testing.T) {
 			expectedResource: Resources{
 				Strings: []String{
 					{
-						Key:   "palmeiras",
-						Value: "Quando surge o alviverde imponente",
-					},
-					{
 						XMLName: xml.Name{Local: "string"},
 						Key:     "palestra_italia",
 						Value:   "Cantando em coro a victoria",
+					},
+					{
+						Key:   "palmeiras",
+						Value: "Quando surge o alviverde imponente",
 					},
 				},
 			},

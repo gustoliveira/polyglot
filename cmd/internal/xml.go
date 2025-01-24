@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"slices"
 	"sort"
 )
 
@@ -44,6 +45,18 @@ func (r Resources) AppendNewString(newString String) Resources {
 	return r
 }
 
+func (r Resources) AddNewStringSorted(newString String) Resources {
+	index := r.IndexToAddSorted(newString)
+	r.Strings = slices.Insert(r.Strings, index, newString)
+	return r
+}
+
+func (r Resources) IndexToAddSorted(newString String) int {
+	return sort.Search(len(r.Strings), func(i int) bool {
+		return r.Strings[i].Key >= newString.Key
+	})
+}
+
 func (r Resources) RemoveStringByKey(key string) Resources {
 	for index, s := range r.Strings {
 		if s.Key == key {
@@ -71,11 +84,19 @@ func (r Resources) CreateOrSubstituteStringByKey(key string, value string) Resou
 		}
 	}
 
-	r = r.AppendNewString(String{
-		XMLName: xml.Name{Local: "string"},
-		Key:     key,
-		Value:   value,
-	})
+	if r.IsSortedByKey() {
+		r = r.AddNewStringSorted(String{
+			XMLName: xml.Name{Local: "string"},
+			Key:     key,
+			Value:   value,
+		})
+	} else {
+		r = r.AppendNewString(String{
+			XMLName: xml.Name{Local: "string"},
+			Key:     key,
+			Value:   value,
+		})
+	}
 
 	return r
 }
