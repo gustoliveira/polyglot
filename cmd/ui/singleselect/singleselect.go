@@ -7,28 +7,39 @@ import (
 )
 
 type model struct {
-	choices      []string
-	cursor       int
-	selected     int
-	selectedName *Selection
-	confirmed    bool
+	choices   []string
+	cursor    int
+	selected  int
+	selection *Selection
+	confirmed bool
 }
 
 type Selection struct {
 	Selected string
+	Index    int
 }
 
-func (s *Selection) Update(optionName string) {
-	s.Selected = optionName
+func InitialSelection() Selection {
+	return Selection{Selected: "", Index: -1}
 }
 
-func InitialModelSingleSelect(choices []string, selectedName *Selection) model {
+func (s *Selection) Reset() *Selection {
+	s.Update("", -1)
+	return s
+}
+
+func (s *Selection) Update(name string, index int) {
+	s.Selected = name
+	s.Index = index
+}
+
+func InitialModelSingleSelect(choices []string, selection *Selection) model {
 	return model{
-		choices:      choices,
-		cursor:       0,
-		selected:     -1,
-		selectedName: selectedName,
-		confirmed:    false,
+		choices:   choices,
+		cursor:    0,
+		selected:  selection.Index,
+		selection: selection,
+		confirmed: false,
 	}
 }
 
@@ -62,10 +73,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter", " ":
 			if m.selected == m.cursor {
 				m.selected = -1
-				m.selectedName.Update("")
+				m.selection.Reset()
 			} else {
 				m.selected = m.cursor
-				m.selectedName.Update(m.choices[m.selected])
+				m.selection.Update(m.choices[m.selected], m.selected)
 			}
 		}
 	}

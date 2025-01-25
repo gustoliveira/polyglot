@@ -26,7 +26,7 @@ func SingleSelectResDirectoryAndReturnTranslations() ([]Translation, error) {
 		return nil, fmt.Errorf("no android resource directories found")
 	}
 
-	selectedPath := singleselect.Selection{Selected: ""}
+	selectedPath := singleselect.InitialSelection()
 
 	tprogram := tea.NewProgram(singleselect.InitialModelSingleSelect(resDirs, &selectedPath))
 	if _, err := tprogram.Run(); err != nil {
