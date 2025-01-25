@@ -29,14 +29,15 @@ func CheckCurrentDirectoryIsAndroidProject() bool {
 	return isAndroidProject
 }
 
-func BlockIfNotAndroidProject(onBlockCallback func()) {
-	if !CheckCurrentDirectoryIsAndroidProject() {
-		fmt.Println("Current directory is not an Android project.")
-		onBlockCallback()
+func BlockIfNotAndroidProject() error {
+	if CheckCurrentDirectoryIsAndroidProject() {
+		return nil
 	}
+
+	return fmt.Errorf("current directory is not an android project")
 }
 
-func FindResourcesDirectoriesPath(root string) []string {
+func FindResourcesDirectoriesPath(root string) ([]string, error) {
 	var resDirs []string
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
@@ -53,10 +54,10 @@ func FindResourcesDirectoriesPath(root string) []string {
 		return nil
 	})
 	if err != nil {
-		fmt.Println("Error walking directory:", err)
+		return nil, err
 	}
 
-	return resDirs
+	return resDirs, nil
 }
 
 func isAndroidResourceDirectory(path string) bool {
@@ -67,7 +68,7 @@ func isAndroidResourceDirectory(path string) bool {
 	return false
 }
 
-func GetTranslationsFromResourceDirectory(path string) []Translation {
+func GetTranslationsFromResourceDirectory(path string) ([]Translation, error) {
 	translations := []Translation{}
 
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
@@ -89,10 +90,14 @@ func GetTranslationsFromResourceDirectory(path string) []Translation {
 		return nil
 	})
 	if err != nil {
-		fmt.Println("Error walking directory:", err)
+		return nil, err
 	}
 
-	return translations
+	if translations == nil || len(translations) == 0 {
+		return nil, fmt.Errorf("no translations found\n")
+	}
+
+	return translations, nil
 }
 
 func GetTranslationFromFileName(path string) (Translation, error) {
@@ -111,8 +116,7 @@ func GetTranslationFromFileName(path string) (Translation, error) {
 
 	tag, err := language.Parse(languageTag)
 	if err != nil {
-		fmt.Println("Error parsing language tag:", err)
-		return Translation{}, err
+		return Translation{}, fmt.Errorf("Error parsing language tag: %v\n", err)
 	}
 
 	return Translation{

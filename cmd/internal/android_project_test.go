@@ -130,11 +130,12 @@ func TestBlockIfNotAndroidProject(t *testing.T) {
 			}
 
 			exitCode := 0
-			mockExit := func() {
+
+			error := BlockIfNotAndroidProject()
+
+			if error != nil {
 				exitCode = 1
 			}
-
-			BlockIfNotAndroidProject(mockExit)
 
 			if exitCode != tt.wantExit {
 				t.Errorf("expected exit code %d, got %d", tt.wantExit, exitCode)

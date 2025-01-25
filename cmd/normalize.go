@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"polyglot/cmd/internal"
 
@@ -18,16 +17,23 @@ func init() {
 var normalizeCmd = &cobra.Command{
 	Use:   "normalize",
 	Short: "Normalize translations files",
-	Run:   runNormalizeCmd,
+	RunE:  runNormalizeCmd,
 }
 
-func runNormalizeCmd(cmd *cobra.Command, args []string) {
-	internal.BlockIfNotAndroidProject(func() { os.Exit(1) })
+func runNormalizeCmd(cmd *cobra.Command, args []string) error {
+	err := internal.BlockIfNotAndroidProject()
+	if err != nil {
+		return err
+	}
 
 	translations, err := internal.SingleSelectResDirectoryAndReturnTranslations()
 	if err != nil || translations == nil {
-		fmt.Println("Error getting translations...")
-		return
+		if err != nil {
+			return err
+		}
+		if translations != nil {
+			return fmt.Errorf("no translations found")
+		}
 	}
 
 	for _, t := range translations {
@@ -50,4 +56,6 @@ func runNormalizeCmd(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
+
+	return nil
 }

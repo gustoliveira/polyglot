@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"polyglot/cmd/internal"
 
@@ -18,16 +17,23 @@ func init() {
 var checkCmd = &cobra.Command{
 	Use:   "check",
 	Short: "Check if the translations is properly normalized",
-	Run:   runCheckCmd,
+	RunE:  runCheckCmd,
 }
 
-func runCheckCmd(cmd *cobra.Command, args []string) {
-	internal.BlockIfNotAndroidProject(func() { os.Exit(1) })
+func runCheckCmd(cmd *cobra.Command, args []string) error {
+	err := internal.BlockIfNotAndroidProject()
+	if err != nil {
+		return err
+	}
 
 	translations, err := internal.SingleSelectResDirectoryAndReturnTranslations()
 	if err != nil || translations == nil {
-		fmt.Println("Error getting translations...")
-		return
+		if err != nil {
+			return err
+		}
+		if translations != nil {
+			return fmt.Errorf("no translations found")
+		}
 	}
 
 	keys := make(map[string]struct{})
@@ -67,4 +73,6 @@ func runCheckCmd(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("Found %v possible unused keys\n\n\n", count)
+
+	return nil
 }

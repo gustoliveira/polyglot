@@ -15,29 +15,32 @@ import (
 func SingleSelectResDirectoryAndReturnTranslations() ([]Translation, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
-		fmt.Println("Error getting current directory:", err)
 		return nil, err
 	}
 
-	resDirs := FindResourcesDirectoriesPath(currentDir)
-	if len(resDirs) == 0 {
-		fmt.Println("No Android resource directories found.")
+	resDirs, err := FindResourcesDirectoriesPath(currentDir)
+	if err != nil {
 		return nil, err
+	}
+	if len(resDirs) == 0 {
+		return nil, fmt.Errorf("no android resource directories found")
 	}
 
 	selectedPath := singleselect.Selection{Selected: ""}
 
 	tprogram := tea.NewProgram(singleselect.InitialModelSingleSelect(resDirs, &selectedPath))
 	if _, err := tprogram.Run(); err != nil {
-		fmt.Printf("Name of project contains an error: %v\n", err)
 		return nil, err
 	}
 
 	if selectedPath.Selected == "" {
-		return nil, nil
+		return nil, fmt.Errorf("no resource directory selected")
 	}
 
-	translations := GetTranslationsFromResourceDirectory(selectedPath.Selected)
+	translations, err := GetTranslationsFromResourceDirectory(selectedPath.Selected)
+	if err != nil {
+		return nil, err
+	}
 
 	return translations, nil
 }

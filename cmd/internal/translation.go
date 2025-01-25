@@ -33,7 +33,7 @@ func TranslateText(text string, targetLanguage string, googleApiKey *string) (st
 
 	client, err := translate.NewClient(ctx, option.WithAPIKey(key))
 	if err != nil {
-		return "", fmt.Errorf("failed to create client: %v", err)
+		return "", fmt.Errorf("failed to create client: %v\n", err)
 	}
 	defer client.Close()
 

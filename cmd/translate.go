@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 
 	"polyglot/cmd/internal"
 
@@ -27,15 +26,18 @@ func init() {
 var translateCmd = &cobra.Command{
 	Use:   "translate",
 	Short: "Translate a string",
-	Run:   runTranslateCmd,
+	RunE:  runTranslateCmd,
 }
 
-func runTranslateCmd(cmd *cobra.Command, args []string) {
-	internal.BlockIfNotAndroidProject(func() { os.Exit(1) })
+func runTranslateCmd(cmd *cobra.Command, args []string) error {
+	err := internal.BlockIfNotAndroidProject()
+	if err != nil {
+		return err
+	}
 
 	key := cmd.Flag("key").Value.String()
 	if !internal.IsKeyValidPrintMessage(key) {
-		return
+		return fmt.Errorf("invalid key")
 	}
 
 	str := cmd.Flag("value").Value.String()
@@ -43,13 +45,17 @@ func runTranslateCmd(cmd *cobra.Command, args []string) {
 
 	if googleApiKey == "" && !internal.ContainsGoogleApiKey() {
 		fmt.Println("You need to pass the key through --googleApiKey flag or set the GOOGLE_TRANSLATE_KEY environment variable to use this command.")
-		return
+		return fmt.Errorf("invalid googleApiKey")
 	}
 
 	translations, err := internal.SingleSelectResDirectoryAndReturnTranslations()
 	if err != nil || translations == nil {
-		fmt.Println("Error getting translations...")
-		return
+		if err != nil {
+			return err
+		}
+		if translations != nil {
+			return fmt.Errorf("no translations found")
+		}
 	}
 
 	languagesFound := []string{}
@@ -89,6 +95,8 @@ func runTranslateCmd(cmd *cobra.Command, args []string) {
 
 		fmt.Printf("%v: %v\n", t.Language, translatedText)
 	}
+
+	return nil
 }
 
 func addStringToResources(r internal.Resources, t internal.Translation, key, translatedText string) internal.Resources {

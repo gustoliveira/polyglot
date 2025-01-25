@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"polyglot/cmd/internal"
 
@@ -17,21 +16,28 @@ func init() {
 var removeCmd = &cobra.Command{
 	Use:   "remove",
 	Short: "Remove a key from all files of a resource directory",
-	Run:   runRemoveCmd,
+	RunE:  runRemoveCmd,
 }
 
-func runRemoveCmd(cmd *cobra.Command, args []string) {
-	internal.BlockIfNotAndroidProject(func() { os.Exit(1) })
+func runRemoveCmd(cmd *cobra.Command, args []string) error {
+	err := internal.BlockIfNotAndroidProject()
+	if err != nil {
+		return err
+	}
 
 	key := cmd.Flag("key").Value.String()
 	if !internal.IsKeyValidPrintMessage(key) {
-		return
+		return fmt.Errorf("invalid key")
 	}
 
 	translations, err := internal.SingleSelectResDirectoryAndReturnTranslations()
 	if err != nil || translations == nil {
-		fmt.Println("Error getting translations...")
-		return
+		if err != nil {
+			return err
+		}
+		if translations != nil {
+			return fmt.Errorf("no translations found")
+		}
 	}
 
 	fmt.Println("Removing...")
@@ -58,4 +64,6 @@ func runRemoveCmd(cmd *cobra.Command, args []string) {
 
 		fmt.Printf("Removed <%v> from %v\n", key, t.Path)
 	}
+
+	return nil
 }

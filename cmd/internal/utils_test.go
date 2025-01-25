@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"bytes"
-	"os"
 	"reflect"
 	"testing"
 )
@@ -98,7 +96,7 @@ func TestIsKeyValidPrintMessage(t *testing.T) {
 				t.Errorf("IsKeyValidPrintMessage(%q) = %v; want %v", tc.input, result, tc.expectedValid)
 			}
 
-			output := captureStdout(func() {
+			output := CaptureStdout(func() {
 				IsKeyValidPrintMessage(tc.input)
 			})
 			if tc.expectedMsg != "" && output != tc.expectedMsg+"\n" {
@@ -110,25 +108,4 @@ func TestIsKeyValidPrintMessage(t *testing.T) {
 			}
 		})
 	}
-}
-
-func captureStdout(runner func()) string {
-	// Save the original stdout
-	originalStdout := os.Stdout
-
-	// Create a read/write pipe
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	// Run the code that prints
-	runner()
-
-	// Close writer and restore original stdout
-	w.Close()
-	os.Stdout = originalStdout
-
-	// Read and return output
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	return buf.String()
 }
