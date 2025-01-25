@@ -10,7 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var force bool
+var (
+	force     bool
+	printOnly bool
+)
 
 func init() {
 	rootCmd.AddCommand(translateCmd)
@@ -18,6 +21,7 @@ func init() {
 	translateCmd.Flags().StringP("value", "v", "", "String to translate (english only, closed in quotes)")
 	translateCmd.Flags().StringP("googleApiKey", "g", "", "Google Translate API Key (if not set it will use the GOOGLE_TRANSLATE_KEY environment variable)")
 	translateCmd.Flags().BoolVar(&force, "force", false, "Force translation even if the key already exists in the file by substituting the value for the new translated one")
+	translateCmd.Flags().BoolVar(&printOnly, "print-only", false, "Only print the translations, do not write to the files")
 }
 
 var translateCmd = &cobra.Command{
@@ -62,7 +66,7 @@ func runTranslateCmd(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		if r.ContainsStringByKey(key) && !force {
+		if !printOnly && (r.ContainsStringByKey(key) && !force) {
 			fmt.Printf("Key <%v> already exists in %v\n", key, t.Path)
 			continue
 		}
@@ -75,10 +79,12 @@ func runTranslateCmd(cmd *cobra.Command, args []string) {
 
 		r = addStringToResources(r, t, key, translatedText)
 
-		err = r.UpdateResourcesToXMLFile(t.Path)
-		if err != nil {
-			fmt.Println(err)
-			continue
+		if !printOnly {
+			err = r.UpdateResourcesToXMLFile(t.Path)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
 		}
 
 		fmt.Printf("%v: %v\n", t.Language, translatedText)
