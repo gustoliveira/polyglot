@@ -6,11 +6,13 @@ import (
 	"os"
 	"slices"
 	"sort"
+	"strings"
 )
 
 type Resources struct {
-	XMLName xml.Name `xml:"resources"`
-	Strings []String `xml:"string"`
+	XMLName     xml.Name    `xml:"resources"`
+	Strings     []String    `xml:"string"`
+	Translation Translation `xml:"-"`
 }
 
 type String struct {
@@ -18,6 +20,66 @@ type String struct {
 	Key          string `xml:"name,attr"`
 	Value        string `xml:",innerxml"`
 	Translatable string `xml:"translatable,attr,omitempty"`
+}
+
+type AllResources struct {
+	existentResourcesPaths []string
+	stringKeys             map[string][]string
+}
+
+type ListResources []Resources
+
+func (ar AllResources) CheckMissingTranslationsRelatory() string {
+	result := ""
+
+	relatory := []string{}
+
+	for key, paths := range ar.stringKeys {
+		diff := StringSlicesDiff(ar.existentResourcesPaths, paths)
+		if len(diff) == 0 {
+			continue
+		}
+
+		defined_in := fmt.Sprintf("DEFINED IN: [%v]", strings.Join(paths, ", "))
+		missing_from := fmt.Sprintf("MISSING FROM: [%v]", strings.Join(diff, ", "))
+		relatory = append(relatory, fmt.Sprintf("\t%v:\n\t\t%v\n\t\t%v\n", key, defined_in, missing_from))
+	}
+
+	if len(relatory) == 0 {
+		return "No missing translations found."
+	}
+
+	result += fmt.Sprintf("\nFound %v possible missing translations:\n", len(relatory))
+	for _, l := range relatory {
+		result += l
+	}
+
+	return result
+}
+
+func (lr ListResources) CheckMissingTranslations() AllResources {
+	allResources := AllResources{
+		existentResourcesPaths: []string{},
+		stringKeys:             make(map[string][]string),
+	}
+
+	for _, r := range lr {
+		allResources.existentResourcesPaths = append(allResources.existentResourcesPaths, r.Translation.Language)
+
+		for _, s := range r.Strings {
+			if s.Translatable == "false" {
+				continue
+			}
+
+			if _, ok := allResources.stringKeys[s.Key]; !ok {
+				allResources.stringKeys[s.Key] = []string{}
+			}
+
+			allResources.stringKeys[s.Key] = append(allResources.stringKeys[s.Key], r.Translation.Language)
+		}
+	}
+
+	return allResources
 }
 
 // Open, read and marshal a existing XML file to Resources
@@ -36,6 +98,13 @@ func GetResourcesFromPathXML(path string) (Resources, error) {
 		fmt.Printf("Error unmarshaling XML: %v\n", err)
 		return resources, err
 	}
+
+	translation, err := GetTranslationFromFileName(path)
+	if err != nil {
+		return resources, err
+	}
+
+	resources.Translation = translation
 
 	return resources, nil
 }

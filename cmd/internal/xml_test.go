@@ -457,6 +457,44 @@ func TestCreateOrSubstituteStringByKey(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Add new string to an unsorted file",
+			initialResource: Resources{
+				Strings: []String{
+					{
+						XMLName: xml.Name{Local: "time"},
+						Key:     "palmeiras",
+						Value:   "Quando surge o alviverde imponente",
+					},
+					{
+						XMLName: xml.Name{Local: "selecao"},
+						Key:     "brasil",
+						Value:   "O campeão voltou",
+					},
+				},
+			},
+			addedKey:   "instituicao",
+			addedValue: "Sociedade Esportiva Palmeiras",
+			expectedResource: Resources{
+				Strings: []String{
+					{
+						XMLName: xml.Name{Local: "time"},
+						Key:     "palmeiras",
+						Value:   "Quando surge o alviverde imponente",
+					},
+					{
+						XMLName: xml.Name{Local: "selecao"},
+						Key:     "brasil",
+						Value:   "O campeão voltou",
+					},
+					{
+						XMLName: xml.Name{Local: "string"},
+						Key:     "instituicao",
+						Value:   "Sociedade Esportiva Palmeiras",
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -490,14 +528,18 @@ func TestGetResourcesFromPathXML(t *testing.T) {
 					{XMLName: xml.Name{Local: "string"}, Key: "app_name", Value: "Test App"},
 					{XMLName: xml.Name{Local: "string"}, Key: "welcome_message", Value: "Welcome to the app!"},
 				},
+				Translation: Translation{Path: "", Language: "English", LocaleCode: "en"},
 			},
 			expectError: false,
 		},
 		{
-			name:           "Empty XML file",
-			xmlContent:     `<?xml version="1.0" encoding="UTF-8"?><resources></resources>`,
-			expectedResult: Resources{XMLName: xml.Name{Local: "resources"}},
-			expectError:    false,
+			name:       "Empty XML file",
+			xmlContent: `<?xml version="1.0" encoding="UTF-8"?><resources></resources>`,
+			expectedResult: Resources{
+				XMLName:     xml.Name{Local: "resources"},
+				Translation: Translation{Path: "", Language: "English", LocaleCode: "en"},
+			},
+			expectError: false,
 		},
 		{
 			name:           "Invalid XML file",
@@ -529,6 +571,9 @@ func TestGetResourcesFromPathXML(t *testing.T) {
 				t.Errorf("Unexpected error: %v", err)
 			}
 
+			if !tc.expectError {
+				tc.expectedResult.Translation.Path = tmpFile.Name()
+			}
 			if !reflect.DeepEqual(result, tc.expectedResult) {
 				t.Errorf("GetResourcesFromPathXML() = %v, want %v", result, tc.expectedResult)
 			}
@@ -836,6 +881,195 @@ func TestSortByKey(t *testing.T) {
 			tc.input.SortByKey()
 			if !reflect.DeepEqual(tc.input, tc.expected) {
 				t.Errorf("Expected sorted Resources to be %v, but got %v", tc.expected, tc.input)
+			}
+		})
+	}
+}
+
+func TestCheckMissingTranslationsRelatory(t *testing.T) {
+	tests := []struct {
+		name         string
+		allResources AllResources
+		want         string
+	}{
+		{
+			name: "No missing translations",
+			allResources: AllResources{
+				existentResourcesPaths: []string{"en", "fr", "es"},
+				stringKeys: map[string][]string{
+					"key1": {"en", "fr", "es"},
+					"key2": {"en", "fr", "es"},
+				},
+			},
+			want: "No missing translations found.",
+		},
+		{
+			name: "Missing translations",
+			allResources: AllResources{
+				existentResourcesPaths: []string{"en", "fr", "es"},
+				stringKeys: map[string][]string{
+					"key1": {"en", "fr"},
+					"key2": {"en", "fr", "es"},
+				},
+			},
+			want: "\nFound 1 possible missing translations:\n\tkey1:\n\t\tDEFINED IN: [en, fr]\n\t\tMISSING FROM: [es]\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.allResources.CheckMissingTranslationsRelatory()
+			if got != tt.want {
+				t.Errorf("CheckMissingTranslationsRelatory() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCheckMissingTranslations(t *testing.T) {
+	tests := []struct {
+		name          string
+		listResources ListResources
+		want          AllResources
+	}{
+		{
+			name: "No missing translations",
+			listResources: ListResources{
+				{
+					Translation: Translation{Language: "en"},
+					Strings: []String{
+						{Key: "key1"},
+						{Key: "key2"},
+					},
+				},
+				{
+					Translation: Translation{Language: "fr"},
+					Strings: []String{
+						{Key: "key1"},
+						{Key: "key2"},
+					},
+				},
+				{
+					Translation: Translation{Language: "es"},
+					Strings: []String{
+						{Key: "key1"},
+						{Key: "key2"},
+					},
+				},
+			},
+			want: AllResources{
+				existentResourcesPaths: []string{"en", "fr", "es"},
+				stringKeys: map[string][]string{
+					"key1": {"en", "fr", "es"},
+					"key2": {"en", "fr", "es"},
+				},
+			},
+		},
+		{
+			name: "Missing translations",
+			listResources: ListResources{
+				{
+					Translation: Translation{Language: "en"},
+					Strings: []String{
+						{Key: "key1"},
+						{Key: "key2"},
+					},
+				},
+				{
+					Translation: Translation{Language: "fr"},
+					Strings: []String{
+						{Key: "key1"},
+					},
+				},
+				{
+					Translation: Translation{Language: "es"},
+					Strings: []String{
+						{Key: "key1"},
+						{Key: "key2"},
+					},
+				},
+			},
+			want: AllResources{
+				existentResourcesPaths: []string{"en", "fr", "es"},
+				stringKeys: map[string][]string{
+					"key1": {"en", "fr", "es"},
+					"key2": {"en", "es"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.listResources.CheckMissingTranslations()
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CheckMissingTranslations() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCheckMissingTranslationsSkipNonTranslatable(t *testing.T) {
+	tests := []struct {
+		name          string
+		listResources ListResources
+		want          AllResources
+	}{
+		{
+			name: "Skip non-translatable strings",
+			listResources: ListResources{
+				{
+					Translation: Translation{Language: "en"},
+					Strings: []String{
+						{Key: "key1", Translatable: "true"},
+						{Key: "key2", Translatable: "false"},
+					},
+				},
+				{
+					Translation: Translation{Language: "fr"},
+					Strings: []String{
+						{Key: "key1", Translatable: "true"},
+						{Key: "key2", Translatable: "false"},
+					},
+				},
+			},
+			want: AllResources{
+				existentResourcesPaths: []string{"en", "fr"},
+				stringKeys: map[string][]string{
+					"key1": {"en", "fr"},
+				},
+			},
+		},
+		{
+			name: "All strings are non-translatable",
+			listResources: ListResources{
+				{
+					Translation: Translation{Language: "en"},
+					Strings: []String{
+						{Key: "key1", Translatable: "false"},
+						{Key: "key2", Translatable: "false"},
+					},
+				},
+				{
+					Translation: Translation{Language: "fr"},
+					Strings: []String{
+						{Key: "key1", Translatable: "false"},
+						{Key: "key2", Translatable: "false"},
+					},
+				},
+			},
+			want: AllResources{
+				existentResourcesPaths: []string{"en", "fr"},
+				stringKeys:             map[string][]string{},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.listResources.CheckMissingTranslations()
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CheckMissingTranslations() = %v, want %v", got, tt.want)
 			}
 		})
 	}

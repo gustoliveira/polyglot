@@ -36,8 +36,12 @@ func runCheckCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	allResources := internal.ListResources{}
+
 	keys := make(map[string]struct{})
 
+	// CHECK: Traslations files are sorted by key
+	fmt.Printf("Checking if translation files are sorted by key...\n")
 	for _, t := range translations {
 		r, err := internal.GetResourcesFromPathXML(t.Path)
 		if err != nil {
@@ -45,9 +49,12 @@ func runCheckCmd(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		fmt.Printf("Checking if translation files are sorted by key in %v...\n", t.Path)
+		allResources = append(allResources, r)
+
 		if !r.IsSortedByKey() {
-			fmt.Printf("\tFAIL: File %v is not sorted by key\n", t.Path)
+			fmt.Printf("\tFAIL: File \"%v\" is not sorted by key\n", t.Path)
+		} else {
+			fmt.Printf("\tPASS: File \"%v\" is sorted by key\n", t.Path)
 		}
 
 		// Add all keys of all resources to check for possible unused keys
@@ -57,7 +64,8 @@ func runCheckCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Printf("Search for *possible* unused keys in all resources...\n")
+	// CHECK: Find possible unused keys
+	fmt.Printf("\nSearch for *possible* unused keys in all resources...\n")
 	count := 0
 	for key := range keys {
 		isBeingUsed, err := internal.IsKeyBeingUsed(key)
@@ -71,8 +79,12 @@ func runCheckCmd(cmd *cobra.Command, args []string) error {
 			count++
 		}
 	}
+	fmt.Printf("Found %v possible unused keys\n\n", count)
 
-	fmt.Printf("Found %v possible unused keys\n\n\n", count)
+	// CHECK: Missing translations between files
+	fmt.Printf("Checking for *possible* missing translations between files...\n")
+	missingTranslationRelatory := allResources.CheckMissingTranslations().CheckMissingTranslationsRelatory()
+	fmt.Println(missingTranslationRelatory)
 
 	return nil
 }

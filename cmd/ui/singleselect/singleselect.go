@@ -91,7 +91,7 @@ func (m model) View() string {
 			return s
 		}
 
-		s := fmt.Sprintf("You selected to translate to languages in %s resources directory\n", m.choices[m.selected])
+		s := fmt.Sprintf("You selected %s resources directory\n", m.choices[m.selected])
 		return s
 	}
 
