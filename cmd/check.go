@@ -8,10 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var allModulesC bool
+
 func init() {
 	// TODO: Add flags to select which type of normalization to check
 	// If none selected check all
 	rootCmd.AddCommand(checkCmd)
+	checkCmd.Flags().BoolVar(&allModulesC, "all", false, "Check all translations files of all project modules")
 }
 
 var checkCmd = &cobra.Command{
@@ -26,7 +29,7 @@ func runCheckCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	translations, err := internal.SingleSelectResDirectoryAndReturnTranslations()
+	translations, err := internal.GetTranslations(allModulesC)
 	if err != nil || translations == nil {
 		if err != nil {
 			return err

@@ -68,6 +68,34 @@ func isAndroidResourceDirectory(path string) bool {
 	return false
 }
 
+func GetTranslationsFromAllModules() ([]Translation, error) {
+	translations := []Translation{}
+
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	paths, err := FindResourcesDirectoriesPath(currentDir)
+	if err != nil {
+		return nil, err
+	}
+	if len(paths) == 0 {
+		return nil, fmt.Errorf("no android resource directories found")
+	}
+
+	for _, p := range paths {
+		t, err := GetTranslationsFromResourceDirectory(p)
+		if err != nil {
+			return nil, err
+		}
+
+		translations = append(translations, t...)
+	}
+
+	return translations, nil
+}
+
 func GetTranslationsFromResourceDirectory(path string) ([]Translation, error) {
 	translations := []Translation{}
 
@@ -93,8 +121,8 @@ func GetTranslationsFromResourceDirectory(path string) ([]Translation, error) {
 		return nil, err
 	}
 
-	if translations == nil || len(translations) == 0 {
-		return nil, fmt.Errorf("no translations found\n")
+	if len(translations) == 0 {
+		return nil, fmt.Errorf("no translations found")
 	}
 
 	return translations, nil
@@ -116,7 +144,7 @@ func GetTranslationFromFileName(path string) (Translation, error) {
 
 	tag, err := language.Parse(languageTag)
 	if err != nil {
-		return Translation{}, fmt.Errorf("Error parsing language tag: %v\n", err)
+		return Translation{}, fmt.Errorf("error parsing language tag: %v", err)
 	}
 
 	return Translation{

@@ -3,6 +3,8 @@ package internal
 import (
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
 )
 
@@ -293,6 +295,147 @@ func TestExtract(t *testing.T) {
 			}
 			if gotRegion != tc.wantRegion {
 				t.Errorf("Region mismatch. Got %v, want %v", gotRegion, tc.wantRegion)
+			}
+		})
+	}
+}
+
+func TestGetTranslationsFromAllModules(t *testing.T) {
+	tests := []struct {
+		name          string
+		setupFiles    map[string]string
+		expectedTrans []Translation
+		expectError   bool
+		errorContains string
+	}{
+		{
+			name: "Single module with multiple translations",
+			setupFiles: map[string]string{
+				"app/src/main/res/values/strings.xml":    `<?xml version="1.0" encoding="utf-8"?><resources></resources>`,
+				"app/src/main/res/values-es/strings.xml": `<?xml version="1.0" encoding="utf-8"?><resources></resources>`,
+				"app/src/main/res/values-pt/strings.xml": `<?xml version="1.0" encoding="utf-8"?><resources></resources>`,
+			},
+			expectedTrans: []Translation{
+				{
+					Path:       "app/src/main/res/values/strings.xml",
+					Language:   "English",
+					LocaleCode: "en",
+					RegionCode: "",
+				},
+				{
+					Path:       "app/src/main/res/values-es/strings.xml",
+					Language:   "Spanish",
+					LocaleCode: "es",
+					RegionCode: "",
+				},
+				{
+					Path:       "app/src/main/res/values-pt/strings.xml",
+					Language:   "Portuguese",
+					LocaleCode: "pt",
+					RegionCode: "",
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "Multiple modules with translations",
+			setupFiles: map[string]string{
+				"app/src/main/res/values/strings.xml":     `<?xml version="1.0" encoding="utf-8"?><resources></resources>`,
+				"feature/src/main/res/values/strings.xml": `<?xml version="1.0" encoding="utf-8"?><resources></resources>`,
+			},
+			expectedTrans: []Translation{
+				{
+					Path:       "app/src/main/res/values/strings.xml",
+					Language:   "English",
+					LocaleCode: "en",
+					RegionCode: "",
+				},
+				{
+					Path:       "feature/src/main/res/values/strings.xml",
+					Language:   "English",
+					LocaleCode: "en",
+					RegionCode: "",
+				},
+			},
+			expectError: false,
+		},
+		{
+			name:          "No resource directories found",
+			setupFiles:    map[string]string{},
+			expectedTrans: nil,
+			expectError:   true,
+			errorContains: "no android resource directories found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			oldDir, err := os.Getwd()
+			if err != nil {
+				t.Fatalf("failed to get current directory: %v", err)
+			}
+			defer os.Chdir(oldDir)
+
+			if err := os.Chdir(tmpDir); err != nil {
+				t.Fatalf("failed to change directory: %v", err)
+			}
+
+			for path, content := range tt.setupFiles {
+				fullPath := filepath.Join(tmpDir, path)
+				err := os.MkdirAll(filepath.Dir(fullPath), 0o755)
+				if err != nil {
+					t.Fatalf("failed to create directories: %v", err)
+				}
+				err = os.WriteFile(fullPath, []byte(content), 0o644)
+				if err != nil {
+					t.Fatalf("failed to write file: %v", err)
+				}
+			}
+
+			result, err := GetTranslationsFromAllModules()
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("expected error, got nil")
+				} else if tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("error %q does not contain %q", err.Error(), tt.errorContains)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+
+			t.Logf("LOG: %v", result)
+			if len(result) != len(tt.expectedTrans) {
+				t.Errorf("got %d translations, want %d", len(result), len(tt.expectedTrans))
+				return
+			}
+
+			sort.Slice(result, func(i, j int) bool {
+				return result[i].Path < result[j].Path
+			})
+			sort.Slice(tt.expectedTrans, func(i, j int) bool {
+				return tt.expectedTrans[i].Path < tt.expectedTrans[j].Path
+			})
+
+			for i := range result {
+				if result[i].Language != tt.expectedTrans[i].Language {
+					t.Errorf("translation[%d].Language = %v, want %v", i, result[i].Language, tt.expectedTrans[i].Language)
+				}
+				if result[i].LocaleCode != tt.expectedTrans[i].LocaleCode {
+					t.Errorf("translation[%d].LocaleCode = %v, want %v", i, result[i].LocaleCode, tt.expectedTrans[i].LocaleCode)
+				}
+				if result[i].RegionCode != tt.expectedTrans[i].RegionCode {
+					t.Errorf("translation[%d].RegionCode = %v, want %v", i, result[i].RegionCode, tt.expectedTrans[i].RegionCode)
+				}
+				if !strings.HasSuffix(result[i].Path, tt.expectedTrans[i].Path) {
+					t.Errorf("translation[%d].Path = %v, want suffix %v", i, result[i].Path, tt.expectedTrans[i].Path)
+				}
 			}
 		})
 	}

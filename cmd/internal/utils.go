@@ -12,6 +12,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+func GetTranslations(allModules bool) ([]Translation, error) {
+	if allModules {
+		return GetTranslationsFromAllModules()
+	}
+	return SingleSelectResDirectoryAndReturnTranslations()
+}
+
 func SingleSelectResDirectoryAndReturnTranslations() ([]Translation, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
