@@ -2,7 +2,7 @@
 
 Polyglot is a CLI tool to manage strings in Android resource files and automate translations using the Google Translate API. It helps you:
 
-1. **Check** if translations are normalized (e.g., sorted by key), and discover potentially unused string resources.
+1. **Check** if translations are normalized (e.g., sorted by key), discover potentially unused string resources, and incosistencies keys between resource.
 2. **Normalize** translations by sorting keys automatically.
 3. **Remove** string keys across all language files at once.
 4. **Translate** new or existing strings to multiple locales using Google Translate.
@@ -130,9 +130,10 @@ polyglot help
 ### Available Commands
 
 #### check
-Checks *all* the resource files for:
+Checks select resource files for:
 1. Key sorting: Reports if any file is not sorted.
-2. Unused keys: Searches for keys in your `.kt` files. If Polyglot cannot find references like `R.string.<your_key>`, that key is labeled “possibly unused.”  
+2. Unused keys: Searches for keys in your `.kt` files. If Polyglot cannot find references like `R.string.<your_key>`, that key is labeled “possibly unused.”
+3. Missing translations between files: Report if there're keys that exists in a file and is missing in others.
 
 Run:
 ```bash
@@ -160,12 +161,14 @@ polyglot remove --key="example_key"
 
 #### translate
 Translates a single English string (`--value`, `-v`) into every language variant found in your Android `res/` folder (e.g., `values-es`, `values-fr`, etc.). It then appends or substitutes the key in each `strings.xml`.
+If the file is sorted, it will be added maintaining the sort property. Otherwise, it will be appended at the end.
 
 Flags:
 - **`--key`, `-k`** *(required)*: The key to use for the translated string.
 - **`--value`, `-v`** *(required)*: The English text to translate.
 - **`--googleApiKey`, `-g`**: Custom Google Translate API key (optional if environment variable is set).
 - **`--force`**: Force substitution if a key already exists.
+- **`--print-only`**:  Only print the translations instead of adding.
 
 Usage:
 ```bash
