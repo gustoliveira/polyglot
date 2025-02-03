@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/x/exp/teatest v0.0.0-20250124185643-7598ce4d23fb
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.8.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.21.0
 	google.golang.org/api v0.214.0
 )
