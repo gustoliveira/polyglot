@@ -6,7 +6,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "polyglot",
-	Short: "A CLI tool to translate new translations in an android project and insert automatically using Google Translate API",
+	Short: "CLI tool to manage translations in android projects using Google Translate API",
 }
 
 func Execute() {

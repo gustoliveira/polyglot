@@ -40,6 +40,9 @@ Below are detailed instructions on how to build, install, configure, and use **P
 
 ## Installation
 
+> [!WARNING]
+> While you can use **Polyglot** on Linux, Windows, and MacOS, not all features are available on **Windows** and **MacOS** platforms. Only **Linux** has full support for now.
+
 ### Install from Releases
 
 #### 1. Download
@@ -79,6 +82,9 @@ cd polyglot
 ```
 
 #### 2. Build and Install
+
+> [!IMPORTANT]
+> **Polyglot** requires Go 1.23 or later to build from source. If you don't have Go installed, you can download it from the [official website](https://golang.org/dl/) or using [asdf](https://asdf-vm.com/).
 
 Run directly:
 
@@ -130,18 +136,33 @@ polyglot help
 ### Available Commands
 
 #### check
-Checks select resource files for:
+Checks selected resource files for:
 1. Key sorting: Reports if any file is not sorted.
 2. Unused keys: Searches for keys in your `.kt` files. If Polyglot cannot find references like `R.string.<your_key>`, that key is labeled “possibly unused.”
 3. Missing translations between files: Report if there're keys that exists in a file and is missing in others.
+
+Flags:
+- **`--all`**: Check the resource directory for all modules.
 
 Run:
 ```bash
 polyglot check
 ```
 
+> [!IMPORTANT]
+> Searching for unused keys uses a simple regex pattern to find references in Kotlin files. It may not catch all references, especially if you use a different pattern or have complex code.
+
+> [!IMPORTANT]
+> Searching for unused keys is not available on **Windows**.
+
+> [!TIP]
+> Install **[ripgrep](https://github.com/BurntSushi/ripgrep)** to improve the search performance. It is a faster alternative to `grep` and `ag` that is available on most package managers.
+
 #### normalize
 Sorts all string keys in `strings.xml` files by alphabetical order across your selected resource directory. If any file is not sorted, Polyglot corrects it in place.
+
+Flags:
+- **`--all`**: Normalize the resource directory for all modules.
 
 Run:
 ```bash

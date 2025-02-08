@@ -68,6 +68,22 @@ func runCheckCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// CHECK: Find possible unused keys
+	checkUnusedKeys(keys)
+
+	// CHECK: Missing translations between files
+	fmt.Printf("Checking for *possible* missing translations between files...\n")
+	missingTranslationRelatory := allResources.CheckMissingTranslations().CheckMissingTranslationsRelatory()
+	fmt.Println(missingTranslationRelatory)
+
+	return nil
+}
+
+func checkUnusedKeys(keys map[string]struct{}) {
+	if internal.IsWindows() {
+		fmt.Println("Checking for unused keys is not supported on Windows")
+		return
+	}
+
 	fmt.Printf("\nSearch for *possible* unused keys in all resources...\n")
 	count := 0
 	for key := range keys {
@@ -83,11 +99,4 @@ func runCheckCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 	fmt.Printf("Found %v possible unused keys\n\n", count)
-
-	// CHECK: Missing translations between files
-	fmt.Printf("Checking for *possible* missing translations between files...\n")
-	missingTranslationRelatory := allResources.CheckMissingTranslations().CheckMissingTranslationsRelatory()
-	fmt.Println(missingTranslationRelatory)
-
-	return nil
 }

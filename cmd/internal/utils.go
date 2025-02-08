@@ -6,11 +6,16 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 
 	"polyglot/cmd/ui/singleselect"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+func IsWindows() bool {
+	return runtime.GOOS == "windows"
+}
 
 func GetTranslations(allModules bool) ([]Translation, error) {
 	if allModules {
@@ -53,6 +58,10 @@ func SingleSelectResDirectoryAndReturnTranslations() ([]Translation, error) {
 }
 
 func IsKeyBeingUsed(key string) (bool, error) {
+	if IsWindows() {
+		return false, fmt.Errorf("not supported on Windows")
+	}
+
 	_, err := exec.LookPath("rg")
 	if err == nil {
 		return IsKeyBeingUsedRipGrep(key)
