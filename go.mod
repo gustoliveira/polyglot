@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	cloud.google.com/go/translate v1.12.3
-	github.com/charmbracelet/bubbletea v1.3.3
+	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/x/exp/teatest v0.0.0-20250124185643-7598ce4d23fb
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.9.1
