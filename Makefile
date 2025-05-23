@@ -29,4 +29,4 @@ release:
 	@goreleaser check
 	@goreleaser release --snapshot --clean
 
-.PHONY: build run test covera clean release
+.PHONY: build run test coverage clean release
