@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"cloud.google.com/go/translate"
 	"golang.org/x/text/language"
@@ -56,5 +57,11 @@ func TranslateText(text string, targetLanguage string, googleApiKey *string) (st
 		return "", fmt.Errorf("translation response is empty")
 	}
 
-	return resp[0].Text, nil
+	formatedText := FormatTranslation(resp[0].Text)
+
+	return formatedText, nil
+}
+
+func FormatTranslation(text string) string {
+	return strings.ReplaceAll(text, `'`, `\'`)
 }

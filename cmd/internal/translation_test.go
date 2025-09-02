@@ -42,3 +42,31 @@ func TestContainsGoogleApiKey(t *testing.T) {
 		}
 	})
 }
+
+func TestFormatTranslation(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"NoSingleQuotes", `Hello world`, `Hello world`},
+		{"RealUseCase", `Aucun élément trouvé avec les filtres actuels. Essayez de modifier les filtres pour afficher plus d'éléments.`, `Aucun élément trouvé avec les filtres actuels. Essayez de modifier les filtres pour afficher plus d\'éléments.`},
+		{"SingleQuoteAtBeginning", `'Hello world`, `\'Hello world`},
+		{"SingleQuoteAtEnd", `Hello world'`, `Hello world\'`},
+		{"SingleQuoteInMiddle", `Hello 'world'`, `Hello \'world\'`},
+		{"MultipleSingleQuotes", `'It's a beautiful day'`, `\'It\'s a beautiful day\'`},
+		{"OnlySingleQuotes", `'''`, `\'\'\'`},
+		{"EmptyString", ``, ``},
+		{"MixedQuotes", `She said 'Hello "world"'`, `She said \'Hello "world"\'`},
+		{"ConsecutiveSingleQuotes", `It''s working`, `It\'\'s working`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := FormatTranslation(tt.input)
+			if result != tt.expected {
+				t.Errorf("FormatTranslation(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
